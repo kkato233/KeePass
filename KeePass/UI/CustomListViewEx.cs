@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ using System.Windows.Forms;
 
 using KeePass.Native;
 
+using KeePassLib.Delegates;
 using KeePassLib.Utility;
 
 using NativeLib = KeePassLib.Native.NativeLib;
@@ -51,6 +52,14 @@ namespace KeePass.UI
 
 			try { this.DoubleBuffered = true; }
 			catch(Exception) { Debug.Assert(false); }
+		}
+
+		protected override void OnHandleCreated(EventArgs e)
+		{
+			base.OnHandleCreated(e);
+			if(Program.DesignMode) return;
+
+			UIUtil.ConfigureToolTip(this);
 		}
 
 		/* private Color m_clrPrev = Color.Black;
@@ -111,6 +120,7 @@ namespace KeePass.UI
 		protected override void OnKeyDown(KeyEventArgs e)
 		{
 			if(UIUtil.HandleCommonKeyEvent(e, true, this)) return;
+			if(HandleRenameKeyEvent(e, true)) return;
 
 			try { if(SkipGroupHeaderIfRequired(e)) return; }
 			catch(Exception) { Debug.Assert(false); }
@@ -121,6 +131,7 @@ namespace KeePass.UI
 		protected override void OnKeyUp(KeyEventArgs e)
 		{
 			if(UIUtil.HandleCommonKeyEvent(e, false, this)) return;
+			if(HandleRenameKeyEvent(e, false)) return;
 
 			base.OnKeyUp(e);
 		}
@@ -204,6 +215,26 @@ namespace KeePass.UI
 			return null;
 		}
 
+		private bool HandleRenameKeyEvent(KeyEventArgs e, bool bDown)
+		{
+			try
+			{
+				if((e.KeyData == Keys.F2) && this.LabelEdit)
+				{
+					ListView.SelectedListViewItemCollection lvsic = this.SelectedItems;
+					if(lvsic.Count >= 1)
+					{
+						UIUtil.SetHandled(e, true);
+						if(bDown) lvsic[0].BeginEdit();
+						return true;
+					}
+				}
+			}
+			catch(Exception) { Debug.Assert(false); }
+
+			return false;
+		}
+
 		/* protected override void WndProc(ref Message m)
 		{
 			if(m.Msg == NativeMethods.WM_NOTIFY)
@@ -225,7 +256,8 @@ namespace KeePass.UI
 			try
 			{
 				if((m.Msg == NativeMethods.WM_CONTEXTMENU) && (m_ctxHeader != null) &&
-					(this.HeaderStyle != ColumnHeaderStyle.None) && !NativeLib.IsUnix())
+					(this.View == View.Details) && (this.HeaderStyle !=
+					ColumnHeaderStyle.None) && !NativeLib.IsUnix())
 				{
 					IntPtr hList = this.Handle;
 					if(hList != IntPtr.Zero)

@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -291,7 +291,7 @@ namespace KeePass.DataExchange
 		/// <returns>Byte array (16 bytes).</returns>
 		public byte[] ToByteArray()
 		{
-			return new byte[]{ this.V0, this.V1, this.V2, this.V3, this.V4,
+			return new byte[] { this.V0, this.V1, this.V2, this.V3, this.V4,
 				this.V5, this.V6, this.V7, this.V8, this.V9, this.VA,
 				this.VB, this.VC, this.VD, this.VE, this.VF };
 		}
@@ -522,8 +522,8 @@ namespace KeePass.DataExchange
 	/// </summary>
 	public sealed class KdbManager : IDisposable
 	{
-		private const string DllFile32 = "KeePassLibC32.dll";
-		private const string DllFile64 = "KeePassLibC64.dll";
+		internal const string DllFile32 = "KeePassLibC32.dll";
+		internal const string DllFile64 = "KeePassLibC64.dll";
 
 		private static readonly bool m_bX64 = (IntPtr.Size == 8);
 

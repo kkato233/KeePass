@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -81,7 +81,9 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <shellapi.h>
+
 #include <tchar.h>
+
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -91,15 +93,20 @@ typedef std::basic_string<TCHAR> std_string;
 int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	LPTSTR lpCmdLine, int nCmdShow);
 
+bool StrEndsWith(const std_string& strText, const std_string& strEnd);
+void EnsureTerminatingSeparator(std_string& strPath);
+
 void UpdateNativeImage(bool bInstall);
 void RegisterPreLoad(bool bRegister);
+
 std_string GetNetInstallRoot();
 std_string GetKeePassExePath();
-void EnsureTerminatingSeparator(std_string& strPath);
+
 std_string FindNGen();
 void FindNGenRec(const std_string& strPath, std_string& strNGenPath,
 	ULONGLONG& ullVersion);
 ULONGLONG SiuGetFileVersion(const std_string& strFilePath);
+
 void CheckDotNetInstalled();
 
 #endif // ___SH_INST_UTIL_H___

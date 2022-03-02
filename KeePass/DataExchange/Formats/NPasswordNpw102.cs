@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Xml;
@@ -30,13 +29,12 @@ using KeePass.Util;
 
 using KeePassLib;
 using KeePassLib.Interfaces;
-using KeePassLib.Resources;
 using KeePassLib.Security;
 using KeePassLib.Utility;
 
 namespace KeePass.DataExchange.Formats
 {
-	// 1.0.2.41
+	// 1.0.2.41-1.0.2.44+
 	internal sealed class NPasswordNpw102 : FileFormatProvider
 	{
 		private const string ElemGroup = "folder";
@@ -71,11 +69,6 @@ namespace KeePass.DataExchange.Formats
 		public override string DefaultExtension { get { return "npw"; } }
 		public override string ApplicationGroup { get { return KPRes.PasswordManagers; } }
 
-		public override Image SmallIcon
-		{
-			get { return KeePass.Properties.Resources.B16x16_Imp_NPassword; }
-		}
-
 		public override void Import(PwDatabase pwStorage, Stream sInput,
 			IStatusLogger slLogger)
 		{
@@ -96,12 +89,11 @@ namespace KeePass.DataExchange.Formats
 
 			byte[] pbData = MemUtil.Read(sInput);
 
-			string strFmt = KLRes.FileLoadFailed + MessageService.NewParagraph +
-				KPRes.NoEncNoCompress;
-			// The file must start with "<?xml"
+			// nPassword has options for encrypting/compressing exports,
+			// which are unsupported; the file must start with "<?xml"
 			if((pbData.Length < 6) || (pbData[0] != 0x3C) || (pbData[1] != 0x3F) ||
 				(pbData[2] != 0x78) || (pbData[3] != 0x6D) || (pbData[4] != 0x6C))
-				throw new FormatException(strFmt);
+				throw new FormatException(KPRes.NoEncNoCompress);
 
 			string strData = Encoding.Default.GetString(pbData);
 			strData = strData.Replace(@"&", @"&amp;");
@@ -150,7 +142,8 @@ namespace KeePass.DataExchange.Formats
 					ReadGroup(xmlChild, pg, pwStorage);
 				else if(xmlChild.Name == ElemEntry)
 					ReadEntry(xmlChild, pg, pwStorage);
-				else if(xmlChild.Name == ElemTags) { }
+				else if(xmlChild.Name == ElemTags)
+					AddTags(pg.Tags, XmlUtil.SafeInnerText(xmlChild));
 				else { Debug.Assert(false); }
 			}
 		}
@@ -188,11 +181,7 @@ namespace KeePass.DataExchange.Formats
 					pe.Strings.Set(PwDefs.NotesField, new ProtectedString(
 						pwStorage.MemoryProtection.ProtectNotes, strValue));
 				else if(xmlChild.Name == ElemTags)
-				{
-					string strTags = strValue.Replace(' ', ';');
-					List<string> vTags = StrUtil.StringToTags(strTags);
-					foreach(string strTag in vTags) { pe.AddTag(strTag); }
-				}
+					AddTags(pe.Tags, strValue);
 				else if(xmlChild.Name == ElemEntryExpires)
 					pe.Expires = StrUtil.StringToBool(strValue);
 				else if(xmlChild.Name == ElemEntryExpiryTime)
@@ -240,6 +229,14 @@ namespace KeePass.DataExchange.Formats
 			}
 
 			pe.AutoType.DefaultSequence = strSeq;
+		}
+
+		private static void AddTags(List<string> lTags, string strNewTags)
+		{
+			if(string.IsNullOrEmpty(strNewTags)) return;
+
+			StrUtil.AddTags(lTags, StrUtil.StringToTags(
+				strNewTags.Replace(' ', ';')));
 		}
 	}
 }

@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ namespace KeePass.Forms
 	public partial class OptionsForm : Form
 	{
 		private ImageList m_ilIcons;
-		private BannerStyle m_curBannerStyle = BannerStyle.KeePassWin32;
+		private BannerStyle m_bsCurrent = BannerStyle.KeePassWin32;
 		private bool m_bBlockUIUpdate = false;
 		private bool m_bLoadingSettings = false;
 
@@ -77,7 +77,7 @@ namespace KeePass.Forms
 		public OptionsForm()
 		{
 			InitializeComponent();
-			Program.Translation.ApplyTo(this);
+			GlobalWindowManager.InitializeForm(this);
 		}
 
 		public void InitEx(ImageList ilIcons)
@@ -96,16 +96,19 @@ namespace KeePass.Forms
 			if(bForceInTaskbar) this.ShowInTaskbar = true;
 		}
 
-		private void CreateDialogBanner(BannerStyle bsStyle)
+		private void CreateDialogBanner(BannerStyle bs)
 		{
-			if(bsStyle == m_curBannerStyle) return;
+			if(bs == m_bsCurrent) return;
+			m_bsCurrent = bs;
 
-			m_curBannerStyle = bsStyle;
+			BannerStyle bsPrev = Program.Config.UI.BannerStyle;
+			if(bs != BannerStyle.Default) Program.Config.UI.BannerStyle = bs;
 
-			m_bannerImage.Image = BannerFactory.CreateBanner(m_bannerImage.Width,
-				m_bannerImage.Height, bsStyle,
+			BannerFactory.CreateBannerEx(this, m_bannerImage,
 				Properties.Resources.B48x48_KCMSystem, KPRes.Options,
 				KPRes.OptionsDesc);
+
+			if(bs != BannerStyle.Default) Program.Config.UI.BannerStyle = bsPrev;
 		}
 
 		private void OnFormLoad(object sender, EventArgs e)
@@ -218,8 +221,14 @@ namespace KeePass.Forms
 			m_lvPolicy.Columns.Add(KPRes.Description, (nWidth * 19) / 29);
 
 			UIUtil.ConfigureToolTip(m_ttRect);
-			m_ttRect.SetToolTip(m_cbClipClearTime, KPRes.ClipboardClearDesc +
-				MessageService.NewParagraph + KPRes.ClipboardOptionME);
+			UIUtil.SetToolTip(m_ttRect, m_cbClipClearTime, KPRes.ClipboardClearDesc +
+				MessageService.NewParagraph + KPRes.ClipboardOptionME, false);
+
+			UIUtil.AccSetName(m_numLockAfterTime, m_cbLockAfterTime);
+			UIUtil.AccSetName(m_numLockAfterGlobalTime, m_cbLockAfterGlobalTime);
+			UIUtil.AccSetName(m_numClipClearTime, m_cbClipClearTime);
+			UIUtil.AccSetName(m_numDefaultExpireDays, m_cbDefaultExpireDays);
+			UIUtil.AccSetName(m_btnCustomAltColor, KPRes.SelectColor);
 
 			if(!NativeLib.IsUnix())
 			{
@@ -387,7 +396,7 @@ namespace KeePass.Forms
 			Debug.Assert(p.ToString() == strPropertyName);
 
 			ListViewItem lvi = m_cdxPolicy.CreateItem(Program.Config.Security.Policy,
-				strPropertyName, null, AppPolicy.GetName(p) + "*");
+				strPropertyName, null, AppPolicy.GetName(p) + " *");
 			lvi.SubItems.Add(AppPolicy.GetDesc(p));
 		}
 
@@ -529,6 +538,8 @@ namespace KeePass.Forms
 				lvg, KPRes.DbMntncResults);
 			m_cdxGuiOptions.CreateItem(Program.Config.UI, "ShowEmSheetDialog",
 				lvg, KPRes.EmergencySheetAsk);
+			m_cdxGuiOptions.CreateItem(Program.Config.UI, "ShowDbOpenUnkVerDialog",
+				lvg, KPRes.DatabaseOpenUnknownVersionAsk);
 
 			lvg = new ListViewGroup(KPRes.Advanced);
 			m_lvGuiOptions.Groups.Add(lvg);
@@ -637,6 +648,8 @@ namespace KeePass.Forms
 				lvg, KPRes.AutoTypeMatchByUrlHostInTitle);
 			m_cdxAdvanced.CreateItem(Program.Config.Integration, "AutoTypeMatchByTagInTitle",
 				lvg, KPRes.AutoTypeMatchByTagInTitle);
+			m_cdxAdvanced.CreateItem(Program.Config.Integration, "AutoTypeMatchNormDashes",
+				lvg, KPRes.ConsiderDashesEq + " (-, \u2010, \u2011, \u2012, \u2013, \u2014, \u2015, \u2212)");
 			m_cdxAdvanced.CreateItem(Program.Config.Integration, "AutoTypeExpiredCanMatch",
 				lvg, KPRes.ExpiredEntriesCanMatch);
 			m_cdxAdvanced.CreateItem(Program.Config.Integration, "AutoTypeAlwaysShowSelDialog",
@@ -802,7 +815,7 @@ namespace KeePass.Forms
 			Program.Config.Apply(AceApplyFlags.All);
 		}
 
-		private void CleanUpEx()
+		private void OnFormClosed(object sender, FormClosedEventArgs e)
 		{
 			int nTab = m_tabMain.SelectedIndex;
 			if((nTab >= 0) && (nTab < m_tabMain.TabPages.Count))
@@ -818,6 +831,8 @@ namespace KeePass.Forms
 			m_cdxAdvanced.Release();
 
 			AppConfigEx.ClearXmlPathCache();
+
+			GlobalWindowManager.RemoveWindow(this);
 		}
 
 		private static void ChangeHotKey(ref Keys kPrev, HotKeyControlEx hkControl,
@@ -884,10 +899,7 @@ namespace KeePass.Forms
 
 		private void OnBannerStyleSelectedChanged(object sender, EventArgs e)
 		{
-			int nIndex = m_cmbBannerStyle.SelectedIndex;
-			
-			BannerStyle bs = (BannerStyle)nIndex;
-			CreateDialogBanner(bs);
+			CreateDialogBanner((BannerStyle)m_cmbBannerStyle.SelectedIndex);
 		}
 
 		private void OnLockAfterTimeCheckedChanged(object sender, EventArgs e)
@@ -947,7 +959,7 @@ namespace KeePass.Forms
 
 		private void OnBtnFileExtCreate(object sender, EventArgs e)
 		{
-			// ShellUtil.RegisterExtension(AppDefs.FileExtension.FileExt, AppDefs.FileExtension.ExtId,
+			// ShellUtil.RegisterExtension(AppDefs.FileExtension.FileExt, AppDefs.FileExtension.FileExtId,
 			//	KPRes.FileExtName2, WinUtil.GetExecutable(), PwDefs.ShortProductName, true);
 			WinUtil.RunElevated(WinUtil.GetExecutable(), "-" +
 				AppDefs.CommandLineOptions.FileExtRegister, false);
@@ -956,7 +968,7 @@ namespace KeePass.Forms
 		private void OnBtnFileExtRemove(object sender, EventArgs e)
 		{
 			// ShellUtil.UnregisterExtension(AppDefs.FileExtension.FileExt,
-			//	AppDefs.FileExtension.ExtId);
+			//	AppDefs.FileExtension.FileExtId);
 			WinUtil.RunElevated(WinUtil.GetExecutable(), "-" +
 				AppDefs.CommandLineOptions.FileExtUnregister, false);
 		}
@@ -971,8 +983,7 @@ namespace KeePass.Forms
 			if(bRequested != bCurrent)
 			{
 				string strPath = WinUtil.GetExecutable().Trim();
-				if(strPath.StartsWith("\"") == false)
-					strPath = "\"" + strPath + "\"";
+				if(!strPath.StartsWith("\"")) strPath = "\"" + strPath + "\"";
 				ShellUtil.SetStartWithWindows(AppDefs.AutoRunName, strPath,
 					bRequested);
 
@@ -981,12 +992,6 @@ namespace KeePass.Forms
 				if(bNew != bRequested)
 					m_cbAutoRun.Checked = bNew;
 			}
-		}
-
-		private void OnFormClosed(object sender, FormClosedEventArgs e)
-		{
-			CleanUpEx();
-			GlobalWindowManager.RemoveWindow(this);
 		}
 
 		private void OnPolicyInfoLinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -1059,6 +1064,16 @@ namespace KeePass.Forms
 		{
 			HelpSourceForm hsf = new HelpSourceForm();
 			UIUtil.ShowDialogAndDestroy(hsf);
+		}
+
+		private void OnSecOptExLinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+		{
+			AppHelp.ShowHelp(AppDefs.HelpTopics.Security, AppDefs.HelpTopics.SecurityOptEx);
+		}
+
+		private void OnSecOptAdmLinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+		{
+			AppHelp.ShowHelp(AppDefs.HelpTopics.Security, AppDefs.HelpTopics.SecurityOptAdm);
 		}
 	}
 }

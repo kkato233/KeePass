@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Xml;
-using System.IO;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
-using System.Diagnostics;
+using System.IO;
+using System.Text;
+using System.Xml;
 
 using KeePass.Resources;
 using KeePass.UI;
@@ -46,15 +46,8 @@ namespace KeePass.DataExchange.Formats
 		public override bool SupportsExport { get { return true; } }
 
 		public override string FormatName { get { return "Mozilla Bookmarks HTML"; } }
-		public override string DefaultExtension { get { return @"html|htm"; } }
+		public override string DefaultExtension { get { return "html|htm"; } }
 		public override string ApplicationGroup { get { return KPRes.Browser; } }
-
-		// public override bool ImportAppendsToRootGroupOnly { get { return false; } }
-
-		public override Image SmallIcon
-		{
-			get { return KeePass.Properties.Resources.B16x16_ASCII; }
-		}
 
 		// //////////////////////////////////////////////////////////////////
 		// Import
@@ -182,14 +175,7 @@ namespace KeePass.DataExchange.Formats
 
 					XmlNode xnTags = xmlChild.Attributes.GetNamedItem("TAGS");
 					if((xnTags != null) && (xnTags.Value != null))
-					{
-						string[] vTags = xnTags.Value.Split(',');
-						foreach(string strTag in vTags)
-						{
-							if(string.IsNullOrEmpty(strTag)) continue;
-							pe.AddTag(strTag);
-						}
-					}
+						StrUtil.AddTags(pe.Tags, xnTags.Value.Split(','));
 				}
 				else if(xmlChild.Name == "DD")
 				{

@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -60,9 +60,7 @@ namespace KeePass.Native
 				int cb = (cc + 2) * cbChar;
 				p = Marshal.AllocCoTaskMem(cb);
 				if(p == IntPtr.Zero) { Debug.Assert(false); return string.Empty; }
-
-				byte[] pbZero = new byte[cb];
-				Marshal.Copy(pbZero, 0, p, cb);
+				MemUtil.ZeroMemory(p, cb);
 
 				int ccReal = GetWindowText(hWnd, p, cc + 1);
 				if(ccReal <= 0) { Debug.Assert(false); return string.Empty; }
@@ -115,7 +113,7 @@ namespace KeePass.Native
 			return IntPtr.Zero;
 		}
 
-		private static readonly char[] m_vWindowTrim = { '\r', '\n' };
+		private static readonly char[] g_vWindowNL = new char[] { '\r', '\n' };
 		internal static void GetForegroundWindowInfo(out IntPtr hWnd,
 			out string strWindowText, bool bTrimWindow)
 		{
@@ -129,7 +127,7 @@ namespace KeePass.Native
 				if(!string.IsNullOrEmpty(strWindowText))
 				{
 					if(bTrimWindow) strWindowText = strWindowText.Trim();
-					else strWindowText = strWindowText.Trim(m_vWindowTrim);
+					else strWindowText = strWindowText.Trim(g_vWindowNL);
 				}
 			}
 		}
@@ -191,6 +189,32 @@ namespace KeePass.Native
 			}
 
 			return false;
+		}
+
+		// Workaround for .NET/Windows TopMost/WS_EX_TOPMOST desynchronization bug;
+		// https://sourceforge.net/p/keepass/discussion/329220/thread/d45a3b38e8/
+		internal static void SyncTopMost(Form f)
+		{
+			if(f == null) { Debug.Assert(false); return; }
+			if(NativeLib.IsUnix()) return;
+
+			try
+			{
+				if(!f.TopMost) return; // Managed state
+
+				IntPtr h = f.Handle;
+				if(h == IntPtr.Zero) return;
+
+				int s = GetWindowLong(h, GWL_EXSTYLE); // Unmanaged state
+				if((s & WS_EX_TOPMOST) == 0)
+				{
+					f.TopMost = true; // Calls SetWindowPos (if TopLevel)
+#if DEBUG
+					Trace.WriteLine("Synchronized TopMost/WS_EX_TOPMOST.");
+#endif
+				}
+			}
+			catch(Exception) { Debug.Assert(false); }
 		}
 
 		internal static IntPtr FindWindow(string strTitle)
@@ -361,7 +385,7 @@ namespace KeePass.Native
 			try
 			{
 				SCROLLINFO si = new SCROLLINFO();
-				si.cbSize = (uint)Marshal.SizeOf(si);
+				si.cbSize = (uint)Marshal.SizeOf(typeof(SCROLLINFO));
 				si.fMask = (uint)ScrollInfoMask.SIF_POS;
 
 				if(GetScrollInfo(hWnd, (int)ScrollBarDirection.SB_VERT, ref si))
@@ -388,7 +412,7 @@ namespace KeePass.Native
 			try
 			{
 				SCROLLINFO si = new SCROLLINFO();
-				si.cbSize = (uint)Marshal.SizeOf(si);
+				si.cbSize = (uint)Marshal.SizeOf(typeof(SCROLLINFO));
 				si.fMask = (uint)ScrollInfoMask.SIF_POS;
 				si.nPos = y;
 
@@ -535,7 +559,7 @@ namespace KeePass.Native
 				throw new ArgumentOutOfRangeException("uIndex");
 
 			LVGROUP g = new LVGROUP();
-			g.cbSize = (uint)Marshal.SizeOf(g);
+			g.cbSize = (uint)Marshal.SizeOf(typeof(LVGROUP));
 
 			g.mask = (LVGF_STATE | LVGF_GROUPID);
 			g.stateMask = uStateMask;
@@ -553,7 +577,7 @@ namespace KeePass.Native
 			if(lv == null) throw new ArgumentNullException("lv");
 
 			LVGROUP g = new LVGROUP();
-			g.cbSize = (uint)Marshal.SizeOf(g);
+			g.cbSize = (uint)Marshal.SizeOf(typeof(LVGROUP));
 
 			g.mask = LVGF_STATE;
 			g.stateMask = uStateMask;
@@ -568,7 +592,7 @@ namespace KeePass.Native
 			if(lv == null) { Debug.Assert(false); return 0; }
 
 			LVGROUP g = new LVGROUP();
-			g.cbSize = (uint)Marshal.SizeOf(g);
+			g.cbSize = (uint)Marshal.SizeOf(typeof(LVGROUP));
 			g.AssertSize();
 
 			g.mask = NativeMethods.LVGF_GROUPID;
@@ -588,7 +612,7 @@ namespace KeePass.Native
 			if(lv == null) { Debug.Assert(false); return; }
 
 			LVGROUP g = new LVGROUP();
-			g.cbSize = (uint)Marshal.SizeOf(g);
+			g.cbSize = (uint)Marshal.SizeOf(typeof(LVGROUP));
 			g.AssertSize();
 
 			g.mask = LVGF_TASK;
@@ -610,7 +634,7 @@ namespace KeePass.Native
 			if(!WinUtil.IsAtLeastWindowsVista) return;
 
 			LVGROUP g = new LVGROUP();
-			g.cbSize = (uint)Marshal.SizeOf(g);
+			g.cbSize = (uint)Marshal.SizeOf(typeof(LVGROUP));
 			g.AssertSize();
 
 			if(strTask != null)
@@ -656,41 +680,40 @@ namespace KeePass.Native
 			strAnsi = null;
 			strUni = null;
 
-			const uint cbZ = 12; // Minimal number of terminating zeros
-			const uint uBufSize = 64 + cbZ;
-			IntPtr pBuf = Marshal.AllocCoTaskMem((int)uBufSize);
-			byte[] pbZero = new byte[uBufSize];
-			Marshal.Copy(pbZero, 0, pBuf, pbZero.Length);
+			const uint cbZ = 12; // Minimal number of terminating zero bytes
+
+			uint cb = 64 + cbZ;
+			IntPtr p = Marshal.AllocCoTaskMem((int)cb);
+			MemUtil.ZeroMemory(p, (long)cb);
 
 			try
 			{
-				uint uReqSize = uBufSize - cbZ;
-				bool bSuccess = GetUserObjectInformation(hDesk, 2, pBuf,
-					uBufSize - cbZ, ref uReqSize);
-				if(uReqSize > (uBufSize - cbZ))
+				uint cbReq = cb - cbZ;
+				bool bSuccess = GetUserObjectInformation(hDesk, 2, p, cbReq, ref cbReq);
+				if(cbReq > (cb - cbZ))
 				{
-					Marshal.FreeCoTaskMem(pBuf);
-					pBuf = Marshal.AllocCoTaskMem((int)(uReqSize + cbZ));
-					pbZero = new byte[uReqSize + cbZ];
-					Marshal.Copy(pbZero, 0, pBuf, pbZero.Length);
+					Marshal.FreeCoTaskMem(p);
 
-					bSuccess = GetUserObjectInformation(hDesk, 2, pBuf,
-						uReqSize, ref uReqSize);
-					Debug.Assert((uReqSize + cbZ) == (uint)pbZero.Length);
+					cb = cbReq + cbZ;
+					p = Marshal.AllocCoTaskMem((int)cb);
+					MemUtil.ZeroMemory(p, (long)cb);
+
+					bSuccess = GetUserObjectInformation(hDesk, 2, p, cbReq, ref cbReq);
+					Debug.Assert((cbReq + cbZ) == cb);
 				}
 
 				if(bSuccess)
 				{
-					try { strAnsi = Marshal.PtrToStringAnsi(pBuf).Trim(); }
+					try { strAnsi = Marshal.PtrToStringAnsi(p).Trim(); }
 					catch(Exception) { }
 
-					try { strUni = Marshal.PtrToStringUni(pBuf).Trim(); }
+					try { strUni = Marshal.PtrToStringUni(p).Trim(); }
 					catch(Exception) { }
 
 					return true;
 				}
 			}
-			finally { Marshal.FreeCoTaskMem(pBuf); }
+			finally { Marshal.FreeCoTaskMem(p); }
 
 			Debug.Assert(false);
 			return false;
@@ -727,13 +750,27 @@ namespace KeePass.Native
 			return false;
 		}
 
-		internal static bool? IsKeyDownMessage(ref Message m)
+		private static bool? IsKeyDownMessage(ref Message m)
 		{
 			if(m.Msg == NativeMethods.WM_KEYDOWN) return true;
 			if(m.Msg == NativeMethods.WM_KEYUP) return false;
 			if(m.Msg == NativeMethods.WM_SYSKEYDOWN) return true;
 			if(m.Msg == NativeMethods.WM_SYSKEYUP) return false;
 			return null;
+		}
+
+		internal static bool GetKeyMessageState(ref Message m, out bool bDown)
+		{
+			bool? obKeyDown = IsKeyDownMessage(ref m);
+			if(!obKeyDown.HasValue)
+			{
+				Debug.Assert(false);
+				bDown = false;
+				return false;
+			}
+
+			bDown = obKeyDown.Value;
+			return true;
 		}
 
 		/* internal static string GetKeyboardLayoutNameEx()

@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -70,7 +70,7 @@ namespace KeePass.Forms
 		public DatabaseSettingsForm()
 		{
 			InitializeComponent();
-			Program.Translation.ApplyTo(this);
+			GlobalWindowManager.InitializeForm(this);
 		}
 
 		public void InitEx(bool bCreatingNew, PwDatabase pwDatabase)
@@ -107,12 +107,18 @@ namespace KeePass.Forms
 			FontUtil.AssignDefaultBold(m_rbGZip);
 
 			UIUtil.ConfigureToolTip(m_ttRect);
-			m_ttRect.SetToolTip(m_btnKdf1Sec, KPRes.KdfParams1Sec);
+			UIUtil.SetToolTip(m_ttRect, m_btnKdf1Sec, KPRes.KdfParams1Sec, false);
+
+			UIUtil.AccSetName(m_btnColor, KPRes.SelectColor);
+			UIUtil.AccSetName(m_numHistoryMaxItems, m_cbHistoryMaxItems);
+			UIUtil.AccSetName(m_numHistoryMaxSize, m_cbHistoryMaxSize);
+			UIUtil.AccSetName(m_numKeyRecDays, m_cbKeyRec);
+			UIUtil.AccSetName(m_numKeyForceDays, m_cbKeyForce);
 
 			m_tbDbName.PromptText = KPRes.DatabaseNamePrompt;
 			m_tbDbDesc.PromptText = KPRes.DatabaseDescPrompt;
 
-			if(m_bCreatingNew) this.Text = KPRes.ConfigureOnNewDatabase2;
+			if(m_bCreatingNew) this.Text = KPRes.ConfigureOnNewDatabase3;
 			else this.Text = KPRes.DatabaseSettings;
 
 			m_tbDbName.Text = m_pwDatabase.Name;
@@ -463,13 +469,13 @@ namespace KeePass.Forms
 		{
 			if(AbortKdfThread()) { Debug.Assert(false); }
 
-			GlobalWindowManager.RemoveWindow(this);
-
 			foreach(ColorMenuItem mi in m_vColorItems)
 				mi.Click -= this.HandleColorButtonClicked;
 			m_vColorItems.Clear();
 
 			UIUtil.DisposeButtonImage(m_btnColor, ref m_imgColor);
+
+			GlobalWindowManager.RemoveWindow(this);
 		}
 
 		private void OnKeyRecCheckedChanged(object sender, EventArgs e)
@@ -909,11 +915,11 @@ namespace KeePass.Forms
 			{
 				Debug.Assert(!m_btnOK.InvokeRequired);
 
+				EnableControlsEx();
+
 				if(!string.IsNullOrEmpty(strMsg))
 					MessageService.ShowInfo(strMsg);
 				else { Debug.Assert(false); }
-
-				EnableControlsEx();
 			}
 			catch(Exception) { Debug.Assert(false); }
 		}

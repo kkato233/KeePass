@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -158,6 +158,14 @@ namespace KeePass.App.Configuration
 		{
 			get { return m_bMatchByTagInTitle; }
 			set { m_bMatchByTagInTitle = value; }
+		}
+
+		private bool m_bMatchNormDashes = true;
+		[DefaultValue(true)]
+		public bool AutoTypeMatchNormDashes
+		{
+			get { return m_bMatchNormDashes; }
+			set { m_bMatchNormDashes = value; }
 		}
 
 		private bool m_bExpiredCanMatch = false;
@@ -357,6 +365,8 @@ namespace KeePass.App.Configuration
 			m_lBuiltInOverrides.Clear();
 
 			m_lBuiltInOverrides.Add(new AceUrlSchemeOverride(true, "ssh",
+				"cmd://SSH.exe -l \"{USERNAME}\" {BASE:RMVSCM}", 0x1000000));
+			m_lBuiltInOverrides.Add(new AceUrlSchemeOverride(false, "ssh",
 				"cmd://PuTTY.exe -ssh {USERNAME}@{BASE:RMVSCM}", 0x1));
 			m_lBuiltInOverrides.Add(new AceUrlSchemeOverride(false, "http",
 				"cmd://{INTERNETEXPLORER} \"{BASE}\"", 0x2));
@@ -404,7 +414,7 @@ namespace KeePass.App.Configuration
 				"cmd://\"{APPDIR}\\KeePass.exe\" \"{BASE:RMVSCM}\" -pw-enc:\"{PASSWORD_ENC}\"", 0x1000));
 			m_lBuiltInOverrides.Add(new AceUrlSchemeOverride(false, "kdbx",
 				"cmd://mono \"{APPDIR}/KeePass.exe\" \"{BASE:RMVSCM}\" -pw-enc:\"{PASSWORD_ENC}\"", 0x2000));
-			// Free: 0x1000000
+			// Free: 0x2000000
 
 #if DEBUG
 			ulong u = 0;

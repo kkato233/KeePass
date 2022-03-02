@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -85,7 +85,8 @@ namespace KeePass.Forms
 		public DataEditorForm()
 		{
 			InitializeComponent();
-			Program.Translation.ApplyTo(this);
+
+			GlobalWindowManager.InitializeForm(this);
 			Program.Translation.ApplyTo("KeePass.Forms.DataEditorForm.m_menuMain", m_menuMain.Items);
 		}
 
@@ -157,13 +158,15 @@ namespace KeePass.Forms
 				string.Empty : " ") + KPRes.Search);
 			UIUtil.SetCueBanner(m_tbFind, strSearchTr);
 
+			UIUtil.SetToolTip(m_tbFontCombo, KPRes.Font, true);
+			UIUtil.SetToolTip(m_tbFontSizeCombo, KPRes.Size, true);
+
 			UIUtil.EnableAutoCompletion(m_tbFontCombo, true);
 			UIUtil.EnableAutoCompletion(m_tbFontSizeCombo, true);
 
-			m_rtbText.Dock = DockStyle.Fill;
+			m_rtbText.WordWrap = Program.Config.UI.DataEditorWordWrap;
 			m_ctxText.Attach(m_rtbText, this);
 			m_tssStatusMain.Text = KPRes.Ready;
-			m_rtbText.WordWrap = Program.Config.UI.DataEditorWordWrap;
 
 			InitFormattingToolBar();
 
@@ -219,14 +222,10 @@ namespace KeePass.Forms
 					m_tbFontCombo.Items.Add(ff.Name);
 			}
 
-			m_tbFontCombo.ToolTipText = KPRes.Font;
-
 			int[] vSizes = new int[] { 8, 9, 10, 11, 12, 14, 16, 18, 20,
 				22, 24, 26, 28, 36, 48, 72 };
 			foreach(int nSize in vSizes)
 				m_tbFontSizeCombo.Items.Add(nSize.ToString());
-
-			m_tbFontSizeCombo.ToolTipText = KPRes.Size;
 		}
 
 		private void UpdateUIState(bool bSetModified, bool bFocusText)
@@ -363,7 +362,10 @@ namespace KeePass.Forms
 			string strRect = UIUtil.GetWindowScreenRect(this);
 			if(strRect != m_strInitialFormRect) // Don't overwrite ""
 				Program.Config.UI.DataEditorRect = strRect;
+		}
 
+		private void OnFormClosed(object sender, FormClosedEventArgs e)
+		{
 			m_ctxText.Detach();
 			GlobalWindowManager.RemoveWindow(this);
 		}
@@ -610,14 +612,14 @@ namespace KeePass.Forms
 
 		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
 		{
-			if(keyData == Keys.Escape)
+			bool bDown;
+			if(!NativeMethods.GetKeyMessageState(ref msg, out bDown))
+				return base.ProcessCmdKey(ref msg, keyData);
+
+			if(keyData == Keys.Escape) // No modifiers
 			{
-				bool? obKeyDown = NativeMethods.IsKeyDownMessage(ref msg);
-				if(obKeyDown.HasValue)
-				{
-					if(obKeyDown.Value) this.Close();
-					return true;
-				}
+				if(bDown) Close();
+				return true;
 			}
 
 			return base.ProcessCmdKey(ref msg, keyData);

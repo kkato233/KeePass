@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Drawing;
 using System.IO;
+using System.Text;
 
 using KeePass.App;
 using KeePass.Resources;
@@ -46,8 +46,8 @@ namespace KeePass.DataExchange.Formats
 		public override string DefaultExtension { get { return AppDefs.FileExtension.FileExt; } }
 		public override string ApplicationGroup { get { return PwDefs.ShortProductName; } }
 
-		public override bool SupportsUuids { get { return true; } }
 		public override bool RequiresKey { get { return true; } }
+		public override bool SupportsUuids { get { return true; } }
 
 		public override Image SmallIcon
 		{
@@ -136,7 +136,7 @@ namespace KeePass.DataExchange.Formats
 			try
 			{
 				KdbxFile kdbx = new KdbxFile(pd);
-				kdbx.ForceVersion = KdbxFile.FileVersion32_3;
+				kdbx.ForceVersion = KdbxFile.FileVersion32_3_1;
 				kdbx.Save(sOutput, pgRoot, KdbxFormat.Default, slLogger);
 			}
 			finally

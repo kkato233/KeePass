@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ namespace KeePass.Forms
 		public CsvImportForm()
 		{
 			InitializeComponent();
-			Program.Translation.ApplyTo(this);
+			GlobalWindowManager.InitializeForm(this);
 		}
 
 		private void OnFormLoad(object sender, EventArgs e)
@@ -164,6 +164,9 @@ namespace KeePass.Forms
 
 			m_cmbFieldFormat.Text = string.Empty;
 
+			UIUtil.AccSetName(m_btnFieldMoveUp, KPRes.MoveUp);
+			UIUtil.AccSetName(m_btnFieldMoveDown, KPRes.MoveDown);
+
 			m_bInitializing = false;
 
 			UpdateTextPreview();
@@ -172,8 +175,6 @@ namespace KeePass.Forms
 
 			ProcessResize();
 			EnableControlsEx();
-
-			UIUtil.SetFocus(m_btnTabNext, this);
 		}
 
 		private void OnFormClosed(object sender, FormClosedEventArgs e)
@@ -611,11 +612,7 @@ namespace KeePass.Forms
 						pe.Expires = (bParseSuccess && (pe.ExpiryTime != dtNoExpire));
 					}
 					else if(cfi.Type == CsvFieldType.Tags)
-					{
-						List<string> lTags = StrUtil.StringToTags(strField);
-						foreach(string strTag in lTags)
-							pe.AddTag(strTag);
-					}
+						StrUtil.AddTags(pe.Tags, StrUtil.StringToTags(strField));
 					else { Debug.Assert(false); }
 
 					if(bCreatePreview)

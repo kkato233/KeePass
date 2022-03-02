@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ using System.Windows.Forms;
 using KeePass.App;
 using KeePass.Resources;
 using KeePass.UI;
+using KeePass.Util;
 
 using KeePassLib;
 using KeePassLib.Collections;
@@ -50,6 +51,16 @@ namespace KeePass.Forms
 
 		private ExpiryControlGroup m_cgExpiry = new ExpiryControlGroup();
 
+		private GroupFormTab m_gftInit = GroupFormTab.None;
+		[Browsable(false)]
+		[DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+		[DefaultValue((object)GroupFormTab.None)]
+		internal GroupFormTab InitialTab
+		{
+			// get { return m_gftInit; } // Internal, uncalled
+			set { m_gftInit = value; }
+		}
+
 		[Obsolete]
 		public void InitEx(PwGroup pg, ImageList ilClientIcons, PwDatabase pwDatabase)
 		{
@@ -68,13 +79,13 @@ namespace KeePass.Forms
 		public GroupForm()
 		{
 			InitializeComponent();
-			Program.Translation.ApplyTo(this);
+			GlobalWindowManager.InitializeForm(this);
 		}
 
 		private void OnFormLoad(object sender, EventArgs e)
 		{
-			Debug.Assert(m_pwGroup != null); if(m_pwGroup == null) throw new InvalidOperationException();
-			Debug.Assert(m_pwDatabase != null); if(m_pwDatabase == null) throw new InvalidOperationException();
+			if(m_pwGroup == null) { Debug.Assert(false); throw new InvalidOperationException(); }
+			if(m_pwDatabase == null) { Debug.Assert(false); throw new InvalidOperationException(); }
 
 			GlobalWindowManager.AddWindow(this);
 
@@ -85,14 +96,17 @@ namespace KeePass.Forms
 			this.Icon = AppIcons.Default;
 			this.Text = strTitle;
 
-			UIUtil.SetButtonImage(m_btnAutoTypeEdit,
-				Properties.Resources.B16x16_Wizard, true);
+			UIUtil.ConfigureToolTip(m_ttRect);
+			UIUtil.SetToolTip(m_ttRect, m_btnIcon, KPRes.SelectIcon, true);
+			UIUtil.SetToolTip(m_ttRect, m_btnAutoTypeEdit, KPRes.ConfigureKeystrokeSeq, true);
+
+			UIUtil.AccSetName(m_dtExpires, m_cbExpires);
+			UIUtil.AccSetName(m_tbDefaultAutoTypeSeq, m_rbAutoTypeOverride);
+
+			m_tbName.Text = m_pwGroup.Name;
 
 			m_pwIconIndex = m_pwGroup.IconId;
 			m_pwCustomIconID = m_pwGroup.CustomIconUuid;
-			
-			m_tbName.Text = m_pwGroup.Name;
-			UIUtil.SetMultilineText(m_tbNotes, m_pwGroup.Notes);
 
 			if(!m_pwCustomIconID.Equals(PwUuid.Zero))
 				UIUtil.SetButtonImage(m_btnIcon, DpiUtil.GetIcon(
@@ -100,6 +114,8 @@ namespace KeePass.Forms
 			else
 				UIUtil.SetButtonImage(m_btnIcon, m_ilClientIcons.Images[
 					(int)m_pwIconIndex], true);
+
+			UIUtil.SetMultilineText(m_tbNotes, m_pwGroup.Notes);
 
 			if(m_pwGroup.Expires)
 			{
@@ -113,20 +129,27 @@ namespace KeePass.Forms
 			}
 			m_cgExpiry.Attach(m_cbExpires, m_dtExpires);
 
+			TagUtil.MakeInheritedTagsLink(m_linkTagsInh, m_pwGroup.ParentGroup, this);
+			m_tbTags.Text = StrUtil.TagsToString(m_pwGroup.Tags, true);
+			TagUtil.MakeTagsButton(m_btnTags, m_tbTags, m_ttRect, m_pwGroup.ParentGroup,
+				((m_pwDatabase != null) ? m_pwDatabase.RootGroup : null));
+
 			m_tbUuid.Text = m_pwGroup.Uuid.ToHexString() + ", " +
 				Convert.ToBase64String(m_pwGroup.Uuid.UuidBytes);
 
 			PwGroup pgParent = m_pwGroup.ParentGroup;
-			bool bParentAutoType = ((pgParent != null) ?
-				pgParent.GetAutoTypeEnabledInherited() :
-				PwGroup.DefaultAutoTypeEnabled);
-			UIUtil.MakeInheritableBoolComboBox(m_cmbEnableAutoType,
-				m_pwGroup.EnableAutoType, bParentAutoType);
+
 			bool bParentSearching = ((pgParent != null) ?
 				pgParent.GetSearchingEnabledInherited() :
 				PwGroup.DefaultSearchingEnabled);
 			UIUtil.MakeInheritableBoolComboBox(m_cmbEnableSearching,
 				m_pwGroup.EnableSearching, bParentSearching);
+
+			bool bParentAutoType = ((pgParent != null) ?
+				pgParent.GetAutoTypeEnabledInherited() :
+				PwGroup.DefaultAutoTypeEnabled);
+			UIUtil.MakeInheritableBoolComboBox(m_cmbEnableAutoType,
+				m_pwGroup.EnableAutoType, bParentAutoType);
 
 			m_tbDefaultAutoTypeSeq.Text = m_pwGroup.GetAutoTypeSequenceInherited();
 
@@ -134,11 +157,13 @@ namespace KeePass.Forms
 				m_rbAutoTypeInherit.Checked = true;
 			else m_rbAutoTypeOverride.Checked = true;
 
+			UIUtil.SetButtonImage(m_btnAutoTypeEdit,
+				Properties.Resources.B16x16_Wizard, true);
+
 			m_sdCustomData = m_pwGroup.CustomData.CloneDeep();
 			UIUtil.StrDictListInit(m_lvCustomData);
 			UIUtil.StrDictListUpdate(m_lvCustomData, m_sdCustomData, false);
 
-			CustomizeForScreenReader();
 			EnableControlsEx();
 
 			ThreadPool.QueueUserWorkItem(delegate(object state)
@@ -154,14 +179,24 @@ namespace KeePass.Forms
 			});
 
 			UIUtil.SetFocus(m_tbName, this);
+
+			switch(m_gftInit)
+			{
+				case GroupFormTab.Properties:
+					m_tabMain.SelectedTab = m_tabProperties; break;
+				case GroupFormTab.AutoType:
+					m_tabMain.SelectedTab = m_tabAutoType; break;
+				case GroupFormTab.CustomData:
+					m_tabMain.SelectedTab = m_tabCustomData; break;
+				default: break;
+			}
 		}
 
-		private void CustomizeForScreenReader()
+		private void OnFormClosed(object sender, FormClosedEventArgs e)
 		{
-			if(!Program.Config.UI.OptimizeForScreenReader) return;
+			m_cgExpiry.Release();
 
-			m_btnIcon.Text = KPRes.PickIcon;
-			m_btnAutoTypeEdit.Text = KPRes.ConfigureAutoType;
+			GlobalWindowManager.RemoveWindow(this);
 		}
 
 		private void EnableControlsEx()
@@ -177,15 +212,17 @@ namespace KeePass.Forms
 			m_pwGroup.Touch(true, false);
 
 			m_pwGroup.Name = m_tbName.Text;
-			m_pwGroup.Notes = m_tbNotes.Text;
 			m_pwGroup.IconId = m_pwIconIndex;
 			m_pwGroup.CustomIconUuid = m_pwCustomIconID;
+			m_pwGroup.Notes = m_tbNotes.Text;
 
 			m_pwGroup.Expires = m_cgExpiry.Checked;
 			m_pwGroup.ExpiryTime = m_cgExpiry.Value;
 
-			m_pwGroup.EnableAutoType = UIUtil.GetInheritableBoolComboBoxValue(m_cmbEnableAutoType);
+			m_pwGroup.Tags = StrUtil.StringToTags(m_tbTags.Text);
+
 			m_pwGroup.EnableSearching = UIUtil.GetInheritableBoolComboBoxValue(m_cmbEnableSearching);
+			m_pwGroup.EnableAutoType = UIUtil.GetInheritableBoolComboBoxValue(m_cmbEnableAutoType);
 
 			if(m_rbAutoTypeInherit.Checked)
 				m_pwGroup.DefaultAutoTypeSequence = string.Empty;
@@ -198,11 +235,6 @@ namespace KeePass.Forms
 		{
 		}
 
-		private void CleanUpEx()
-		{
-			m_cgExpiry.Release();
-		}
-
 		private void OnBtnIcon(object sender, EventArgs e)
 		{
 			IconPickerForm ipf = new IconPickerForm();
@@ -211,19 +243,15 @@ namespace KeePass.Forms
 
 			if(ipf.ShowDialog() == DialogResult.OK)
 			{
-				if(!ipf.ChosenCustomIconUuid.Equals(PwUuid.Zero)) // Custom icon
-				{
-					m_pwCustomIconID = ipf.ChosenCustomIconUuid;
+				m_pwIconIndex = (PwIcon)ipf.ChosenIconId;
+				m_pwCustomIconID = ipf.ChosenCustomIconUuid;
+
+				if(!m_pwCustomIconID.Equals(PwUuid.Zero))
 					UIUtil.SetButtonImage(m_btnIcon, DpiUtil.GetIcon(
 						m_pwDatabase, m_pwCustomIconID), true);
-				}
-				else // Standard icon
-				{
-					m_pwIconIndex = (PwIcon)ipf.ChosenIconId;
-					m_pwCustomIconID = PwUuid.Zero;
+				else
 					UIUtil.SetButtonImage(m_btnIcon, m_ilClientIcons.Images[
 						(int)m_pwIconIndex], true);
-				}
 			}
 
 			UIUtil.DestroyForm(ipf);
@@ -249,12 +277,6 @@ namespace KeePass.Forms
 
 			UIUtil.DestroyForm(dlg);
 			EnableControlsEx();
-		}
-
-		private void OnFormClosed(object sender, FormClosedEventArgs e)
-		{
-			CleanUpEx();
-			GlobalWindowManager.RemoveWindow(this);
 		}
 
 		private void OnCustomDataSelectedIndexChanged(object sender, EventArgs e)

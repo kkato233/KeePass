@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ namespace KeePass.Forms
 		{
 			InitializeComponent();
 
-			Program.Translation.ApplyTo(this);
+			GlobalWindowManager.InitializeForm(this);
 			Program.Translation.ApplyTo("KeePass.Forms.EcasTriggersForm.m_ctxTools", m_ctxTools.Items);
 		}
 
@@ -77,7 +77,6 @@ namespace KeePass.Forms
 			if(m_triggers == null) { Debug.Assert(false); return; }
 
 			GlobalWindowManager.AddWindow(this);
-			GlobalWindowManager.CustomizeControl(m_ctxTools);
 
 			BannerFactory.CreateBannerEx(this, m_bannerImage,
 				Properties.Resources.B48x48_Make_KDevelop, KPRes.Triggers,
@@ -98,16 +97,15 @@ namespace KeePass.Forms
 			if(object.ReferenceEquals(m_triggersInOut, ts) &&
 				AppConfigEx.IsOptionEnforced(tsCfg, "Enabled"))
 				m_cbEnableTriggers.Enabled = false;
-		}
 
-		private void CleanUpEx()
-		{
-			m_lvTriggers.SmallImageList = null; // Detach event handlers
+			UIUtil.AccSetName(m_btnMoveUp, KPRes.MoveUp);
+			UIUtil.AccSetName(m_btnMoveDown, KPRes.MoveDown);
 		}
 
 		private void OnFormClosed(object sender, FormClosedEventArgs e)
 		{
-			CleanUpEx();
+			m_lvTriggers.SmallImageList = null; // Detach event handlers
+
 			GlobalWindowManager.RemoveWindow(this);
 		}
 

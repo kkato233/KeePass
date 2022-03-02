@@ -199,6 +199,9 @@
     <Compile Include="..\KeePassLib\Keys\KcpKeyFile.cs">
       <Link>KeePassLib\Keys\KcpKeyFile.cs</Link>
     </Compile>
+    <Compile Include="..\KeePassLib\Keys\KcpKeyFile.Xml.cs">
+      <Link>KeePassLib\Keys\KcpKeyFile.Xml.cs</Link>
+    </Compile>
     <Compile Include="..\KeePassLib\Keys\KcpPassword.cs">
       <Link>KeePassLib\Keys\KcpPassword.cs</Link>
     </Compile>
@@ -222,6 +225,9 @@
     </Compile>
     <Compile Include="..\KeePassLib\Native\ClipboardU.cs">
       <Link>KeePassLib\Native\ClipboardU.cs</Link>
+    </Compile>
+    <Compile Include="..\KeePassLib\Native\NativeBufferEx.cs">
+      <Link>KeePassLib\Native\NativeBufferEx.cs</Link>
     </Compile>
     <Compile Include="..\KeePassLib\Native\NativeLib.cs">
       <Link>KeePassLib\Native\NativeLib.cs</Link>
@@ -256,8 +262,14 @@
     <Compile Include="..\KeePassLib\PwGroup.cs">
       <Link>KeePassLib\PwGroup.cs</Link>
     </Compile>
+    <Compile Include="..\KeePassLib\PwGroup.Search.cs">
+      <Link>KeePassLib\PwGroup.Search.cs</Link>
+    </Compile>
     <Compile Include="..\KeePassLib\PwUuid.cs">
       <Link>KeePassLib\PwUuid.cs</Link>
+    </Compile>
+    <Compile Include="..\KeePassLib\Resources\KLRes.cs">
+      <Link>KeePassLib\Resources\KLRes.cs</Link>
     </Compile>
     <Compile Include="..\KeePassLib\Resources\KLRes.Generated.cs">
       <Link>KeePassLib\Resources\KLRes.Generated.cs</Link>
@@ -380,6 +392,7 @@
     <Compile Include="App\Configuration\AceMainWindow.cs" />
     <Compile Include="App\Configuration\AceNative.cs" />
     <Compile Include="App\Configuration\AcePasswordGenerator.cs" />
+    <Compile Include="App\Configuration\AceSearch.cs" />
     <Compile Include="App\Configuration\AceSecurity.cs" />
     <Compile Include="App\Configuration\AceToolBar.cs" />
     <Compile Include="App\Configuration\AceTrayIcon.cs" />
@@ -388,6 +401,8 @@
     <Compile Include="App\Configuration\AppConfigSerializer.cs" />
     <Compile Include="DataExchange\CsvStreamReader.cs" />
     <Compile Include="DataExchange\CsvStreamReaderEx.cs" />
+    <Compile Include="DataExchange\CsvTableEntryReader.cs" />
+    <Compile Include="DataExchange\CsvTableObjectReader.cs" />
     <Compile Include="DataExchange\ExportUtil.cs" />
     <Compile Include="DataExchange\FileFormatProvider.cs" />
     <Compile Include="DataExchange\Formats\AmpXml250.cs" />
@@ -396,6 +411,7 @@
     <Compile Include="DataExchange\Formats\ChromeCsv66.cs" />
     <Compile Include="DataExchange\Formats\CodeWalletTxt605.cs" />
     <Compile Include="DataExchange\Formats\DashlaneCsv2.cs" />
+    <Compile Include="DataExchange\Formats\DashlaneJson6.cs" />
     <Compile Include="DataExchange\Formats\DataVaultCsv47.cs" />
     <Compile Include="DataExchange\Formats\DesktopKnoxXml32.cs" />
     <Compile Include="DataExchange\Formats\EnpassTxt5.cs" />
@@ -403,6 +419,7 @@
     <Compile Include="DataExchange\Formats\GenericCsv.cs" />
     <Compile Include="DataExchange\Formats\HandySafeProXml12.cs" />
     <Compile Include="DataExchange\Formats\HandySafeTxt512.cs" />
+    <Compile Include="DataExchange\Formats\KasperskyPwMgrTxt90.cs" />
     <Compile Include="DataExchange\Formats\KasperskyPwMgrXml50.cs" />
     <Compile Include="DataExchange\Formats\KeePassCsv1x.cs" />
     <Compile Include="DataExchange\Formats\KeePassHtml2x.cs" />
@@ -412,6 +429,7 @@
     <Compile Include="DataExchange\Formats\KeePassXml1x.cs" />
     <Compile Include="DataExchange\Formats\KeePassXml2x.cs" />
     <Compile Include="DataExchange\Formats\KeePassXXml041.cs" />
+    <Compile Include="DataExchange\Formats\KeeperJson16.cs" />
     <Compile Include="DataExchange\Formats\LastPassCsv2.cs" />
     <Compile Include="DataExchange\Formats\MozillaBookmarksHtml100.cs" />
     <Compile Include="DataExchange\Formats\MozillaBookmarksJson100.cs" />
@@ -472,6 +490,7 @@
     <Compile Include="Forms\AboutForm.Designer.cs">
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\_Accessories.cs" />
     <Compile Include="Forms\AutoTypeCtxForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -573,6 +592,12 @@
     </Compile>
     <Compile Include="Forms\EntropyForm.Designer.cs">
       <DependentUpon>EntropyForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\KeyFileCreationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\KeyFileCreationForm.Designer.cs">
+      <DependentUpon>KeyFileCreationForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\ListViewForm.cs">
       <SubType>Form</SubType>
@@ -843,6 +868,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="UI\ProtectedDialog.cs" />
+    <Compile Include="UI\PwGeneratorMenu.cs" />
     <Compile Include="UI\PwInputControlGroup.cs" />
     <Compile Include="UI\RichTextBuilder.cs" />
     <Compile Include="UI\RtlAwareResizeScope.cs" />
@@ -954,6 +980,9 @@
     <EmbeddedResource Include="Forms\EntropyForm.resx">
       <SubType>Designer</SubType>
       <DependentUpon>EntropyForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\KeyFileCreationForm.resx">
+      <DependentUpon>KeyFileCreationForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\ListViewForm.resx">
       <SubType>Designer</SubType>
@@ -1155,6 +1184,7 @@
     <Compile Include="Util\Spr\SprEngine.PickChars.cs" />
     <Compile Include="Util\Spr\SprRefCache.cs" />
     <Compile Include="Util\Spr\SprSyntax.cs" />
+    <Compile Include="Util\TagUtil.cs" />
     <Compile Include="Util\TempFilesPool.cs" />
     <Compile Include="Util\TextSimilarity.cs" />
     <Compile Include="Util\UpdateCheckEx.cs" />
@@ -1284,17 +1314,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="KeePass.ico" />
-    <None Include="Resources\Images\B16x16_Imp_TrueKey.png" />
-    <None Include="Resources\Images\B16x16_Imp_Steganos20.png" />
-    <None Include="Resources\Images\B16x16_Imp_Bitwarden.png" />
-    <None Include="Resources\Images\B16x16_Imp_Chrome.png" />
+    <None Include="Resources\Nuvola\B16x16_Services.png" />
     <None Include="Resources\Images\B48x35_WritingHand.png" />
     <None Include="Resources\Icons\KeePass.ico" />
-    <None Include="Resources\Images\B16x16_Imp_Enpass.png" />
-    <None Include="Resources\Images\B16x16_Imp_MSecure.png" />
-    <None Include="Resources\Images\B16x16_Imp_PwSaver.png" />
     <None Include="Resources\Nuvola\B16x16_Folder.png" />
-    <None Include="Resources\Images\B16x16_Imp_NPassword.png" />
     <None Include="Resources\Nuvola_Derived\B16x16_Folder_New_Ex.png" />
     <None Include="Resources\Nuvola_Derived\B16x16_TextAlignRight.png" />
     <None Include="Resources\Nuvola_Derived\B16x16_TextAlignLeft.png" />
@@ -1308,35 +1331,16 @@
     <None Include="Resources\Images\B16x16_Transparent.png" />
     <None Include="Resources\Images\B19x07_3BlackDots.png" />
     <None Include="Resources\Images\B16x16_MenuCheck.png" />
-    <None Include="Resources\Images\B16x16_Imp_VisKeeper.png" />
-    <None Include="Resources\Images\B16x16_Imp_Dashlane.png" />
-    <None Include="Resources\Images\B16x16_Imp_NortonIdSafe.png" />
     <None Include="Resources\Data\MostPopularPasswords.txt.gz" />
     <None Include="Resources\Nuvola_Derived\B16x16_EditCopyUrl.png" />
     <None Include="Resources\Nuvola\B16x16_KTouch.png" />
     <None Include="Resources\Nuvola_Derived\B16x16_Folder_2.png" />
-    <None Include="Resources\Images\B16x16_Imp_NetworkPwMgr.png" />
-    <None Include="Resources\Images\B16x16_Imp_TurboPws.png" />
-    <None Include="Resources\Images\B16x16_Imp_SafeWallet.png" />
-    <None Include="Resources\Images\B16x16_Imp_LastPass.png" />
-    <None Include="Resources\Images\B16x16_Imp_DesktopKnox.png" />
     <None Include="Resources\Nuvola_Derived\B16x16_Key_New.png" />
     <None Include="Resources\Nuvola_Derived\B16x16_EditCopyLink.png" />
-    <None Include="Resources\Images\B16x16_Imp_KasperskyPwMgr.png" />
-    <None Include="Resources\Images\B16x16_Imp_StickyPw.png" />
-    <None Include="Resources\Images\B16x16_Imp_PwsPlus.png" />
     <None Include="Resources\Nuvola\B16x16_KaboodleLoop.png" />
     <None Include="Resources\Images\B16x16_MenuRadio.png" />
-    <None Include="Resources\Images\B16x16_Imp_DataVault.png" />
-    <None Include="Resources\Images\B16x16_Imp_Revelation.png" />
-    <None Include="Resources\Images\B16x16_Imp_PwPrompter.png" />
-    <None Include="Resources\Images\B16x16_WinFavs.png" />
     <None Include="Resources\Nuvola\B16x16_KNotes.png" />
     <None Include="Resources\Nuvola\B48x48_View_Detailed.png" />
-    <None Include="Resources\Images\B16x16_Imp_HandySafePro.png" />
-    <None Include="Resources\Images\B16x16_Imp_ZdnPwPro.png" />
-    <None Include="Resources\Images\B16x16_Imp_HandySafe.png" />
-    <None Include="Resources\Images\B16x16_Imp_KeePassX.png" />
     <None Include="Resources\Icons\LockOverlay.ico" />
     <None Include="Resources\Nuvola\B16x16_Redo.png" />
     <None Include="Resources\Nuvola\B16x16_Color_Fill.png" />
@@ -1345,32 +1349,14 @@
     <None Include="Resources\Images\B16x16_FontUnderline.png" />
     <None Include="Resources\Images\B16x16_FontItalic.png" />
     <None Include="Resources\Images\B16x16_FontBold.png" />
-    <None Include="Resources\Images\B16x16_Imp_FlexWallet.png" />
-    <None Include="Resources\Images\B16x16_Imp_OnePwPro.png" />
     <None Include="Resources\Nuvola\B48x48_Make_KDevelop.png" />
     <None Include="Resources\Nuvola\B16x16_Make_KDevelop.png" />
-    <None Include="Resources\Images\B16x16_Imp_PassKeeper.png" />
-    <None Include="Resources\Images\B16x16_Imp_PwMem2008.png" />
     <None Include="Resources\Nuvola\B16x16_Folder_Outbox.png" />
-    <None Include="Resources\Images\B16x16_Imp_RoboForm.png" />
-    <None Include="Resources\Images\B16x16_Imp_SplashID.png" />
-    <None Include="Resources\Images\B16x16_Imp_PwTresor.png" />
     <None Include="Resources\Nuvola_Derived\B16x16_File_Close.png" />
     <None Include="Resources\Nuvola_Derived\B16x16_File_SaveAll.png" />
     <None Include="Resources\Nuvola_Derived\B16x16_File_SaveAll_Disabled.png" />
-    <None Include="Resources\Images\B16x16_Imp_Steganos.png" />
-    <None Include="Resources\Images\B16x16_Imp_Whisper32.png" />
     <None Include="KeePass.pfx" />
     <None Include="Resources\Nuvola\B16x16_Folder_Inbox.png" />
-    <None Include="Resources\Images\B16x16_Imp_Security.png" />
-    <None Include="Resources\Images\B16x16_Imp_PwSafe.png" />
-    <None Include="Resources\Images\B16x16_Imp_PwDepot.png" />
-    <None Include="Resources\Images\B16x16_Imp_PwAgent.png" />
-    <None Include="Resources\Images\B16x16_Imp_PVault.png" />
-    <None Include="Resources\Images\B16x16_Imp_PINs.png" />
-    <None Include="Resources\Images\B16x16_Imp_CWallet.png" />
-    <None Include="Resources\Images\B16x16_Imp_AnyPw.png" />
-    <None Include="Resources\Images\B16x16_Imp_AmP.png" />
     <None Include="Resources\Nuvola\B48x48_Run.png" />
     <None Include="Resources\Nuvola\B16x16_WWW.png" />
     <None Include="Resources\Nuvola\B48x48_WWW.png" />

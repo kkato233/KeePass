@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 using System.Resources;
 using System.Security.AccessControl;
@@ -54,6 +55,7 @@ using KeePassLib;
 using KeePassLib.Cryptography;
 using KeePassLib.Cryptography.Cipher;
 using KeePassLib.Cryptography.PasswordGenerator;
+using KeePassLib.Delegates;
 using KeePassLib.Keys;
 using KeePassLib.Resources;
 using KeePassLib.Security;
@@ -292,6 +294,19 @@ namespace KeePass
 
 			if(!CommonInit()) { CommonTerminate(); return; }
 
+			KdbxFile.ConfirmOpenUnknownVersion = delegate()
+			{
+				if(!Program.Config.UI.ShowDbOpenUnkVerDialog) return true;
+
+				string strMsg = KPRes.DatabaseOpenUnknownVersionInfo +
+					MessageService.NewParagraph + KPRes.DatabaseOpenUnknownVersionRec +
+					MessageService.NewParagraph + KPRes.DatabaseOpenUnknownVersionQ;
+				// No 'Do not show this dialog again' option;
+				// https://sourceforge.net/p/keepass/discussion/329220/thread/096c122154/
+				return MessageService.AskYesNo(strMsg, PwDefs.ShortProductName,
+					false, MessageBoxIcon.Warning);
+			};
+
 			if(m_appConfig.Application.Start.PluginCacheClearOnce)
 			{
 				PlgxCache.Clear();
@@ -301,14 +316,16 @@ namespace KeePass
 
 			if(m_cmdLineArgs[AppDefs.CommandLineOptions.FileExtRegister] != null)
 			{
-				ShellUtil.RegisterExtension(AppDefs.FileExtension.FileExt, AppDefs.FileExtension.ExtId,
-					KPRes.FileExtName2, WinUtil.GetExecutable(), PwDefs.ShortProductName, false);
+				ShellUtil.RegisterExtension(AppDefs.FileExtension.FileExt,
+					AppDefs.FileExtension.FileExtId, KPRes.FileExtName2,
+					WinUtil.GetExecutable(), PwDefs.ShortProductName, false);
 				MainCleanUp();
 				return;
 			}
 			if(m_cmdLineArgs[AppDefs.CommandLineOptions.FileExtUnregister] != null)
 			{
-				ShellUtil.UnregisterExtension(AppDefs.FileExtension.FileExt, AppDefs.FileExtension.ExtId);
+				ShellUtil.UnregisterExtension(AppDefs.FileExtension.FileExt,
+					AppDefs.FileExtension.FileExtId);
 				MainCleanUp();
 				return;
 			}
@@ -323,10 +340,10 @@ namespace KeePass
 			/* if(m_cmdLineArgs[AppDefs.CommandLineOptions.PreLoadRegister] != null)
 			{
 				string strPreLoadPath = WinUtil.GetExecutable().Trim();
-				if(strPreLoadPath.StartsWith("\"") == false)
+				if(!strPreLoadPath.StartsWith("\""))
 					strPreLoadPath = "\"" + strPreLoadPath + "\"";
 				ShellUtil.RegisterPreLoad(AppDefs.PreLoadName, strPreLoadPath,
-					@"--" + AppDefs.CommandLineOptions.PreLoad, true);
+					"--" + AppDefs.CommandLineOptions.PreLoad, true);
 				MainCleanUp();
 				return;
 			}
@@ -596,6 +613,7 @@ namespace KeePass
 			m_rndGlobal = CryptoRandom.NewWeakRandom();
 
 			InitEnvSecurity();
+			InitAppContext();
 			MonoWorkarounds.Initialize();
 
 			// Do not run as AppX, because of compatibility problems
@@ -712,6 +730,82 @@ namespace KeePass
 				}
 			}
 			catch(Exception) { Debug.Assert(NativeLib.IsUnix() || !WinUtil.IsAtLeastWindowsVista); }
+		}
+
+		private static void InitAppContext()
+		{
+			try
+			{
+				Type t = typeof(string).Assembly.GetType("System.AppContext", false);
+				if(t == null) return; // Available in .NET >= 4.6
+
+				MethodInfo mi = t.GetMethod("SetSwitch", BindingFlags.Public |
+					BindingFlags.Static);
+				if(mi == null) { Debug.Assert(false); return; }
+
+				GAction<string, bool> f = delegate(string strSwitch, bool bValue)
+				{
+					mi.Invoke(null, new object[] { strSwitch, bValue });
+				};
+
+				f("Switch.System.Drawing.DontSupportPngFramesInIcons", false); // 4.6
+				f("Switch.System.Drawing.Printing.OptimizePrintPreview", true); // 4.6, optional
+				f("Switch.System.IO.Compression.DoNotUseNativeZipLibraryForDecompression", false); // 4.7.2
+				f("Switch.System.IO.Compression.ZipFile.UseBackslash", false); // 4.6.1
+				f("Switch.System.Security.Cryptography.AesCryptoServiceProvider.DontCorrectlyResetDecryptor", false); // 4.6.2
+				f("Switch.System.Windows.Forms.DoNotLoadLatestRichEditControl", false); // 4.7
+				f("Switch.System.Windows.Forms.DoNotSupportSelectAllShortcutInMultilineTextBox", false); // 4.6.1
+				f("Switch.System.Windows.Forms.DontSupportReentrantFilterMessage", false); // 4.6.1
+				f("Switch.System.Windows.Forms.EnableVisualStyleValidation", false); // 4.8
+				// f("Switch.System.Windows.Forms.UseLegacyToolTipDisplay", false); // 4.8, optional
+				f("Switch.UseLegacyAccessibilityFeatures", false); // 4.7.1
+				f("Switch.UseLegacyAccessibilityFeatures.2", false); // 4.7.2
+				f("Switch.UseLegacyAccessibilityFeatures.3", false); // 4.8
+				f("Switch.UseLegacyAccessibilityFeatures.4", false); // 4.8 upd.
+
+#if DEBUG
+				// Check that the internal classes do not cache other values already
+
+				const BindingFlags bf = BindingFlags.Public | BindingFlags.NonPublic |
+					BindingFlags.Static;
+
+				GAction<Type, string, bool> fCheckB = delegate(Type tClass,
+					string strProperty, bool bValue)
+				{
+					PropertyInfo pi = tClass.GetProperty(strProperty, bf);
+					string strFullName = tClass.FullName + "." + strProperty;
+					if(pi == null) { Debug.Assert(false, strFullName + " not found!"); return; }
+					Debug.Assert(((bool)pi.GetValue(null, null) == bValue),
+						strFullName + " returned an unexpected value!");
+				};
+
+				Type tS = typeof(GZipStream).Assembly.GetType(
+					"System.LocalAppContextSwitches", false);
+				if(tS == null) { Debug.Assert(false); return; }
+
+				Type tD = typeof(Image).Assembly.GetType(
+					"System.Drawing.LocalAppContextSwitches", false);
+				if(tD == null) { Debug.Assert(false); return; }
+
+				Type tW = typeof(ListViewItem).Assembly.GetType(
+					"System.Windows.Forms.LocalAppContextSwitches", false);
+				if(tW == null) { Debug.Assert(false); return; }
+
+				Type tA = typeof(ListViewItem).Assembly.GetType(
+					"System.AccessibilityImprovements", false);
+				if(tA == null) { Debug.Assert(false); return; }
+
+				fCheckB(tD, "DontSupportPngFramesInIcons", false);
+				fCheckB(tD, "OptimizePrintPreview", true);
+				fCheckB(tS, "DoNotUseNativeZipLibraryForDecompression", false);
+				fCheckB(tW, "DoNotLoadLatestRichEditControl", false);
+				fCheckB(tW, "DoNotSupportSelectAllShortcutInMultilineTextBox", false);
+				fCheckB(tW, "DontSupportReentrantFilterMessage", false);
+				fCheckB(tW, "EnableVisualStyleValidation", false);
+				fCheckB(tA, "Level4", true);
+#endif
+			}
+			catch(Exception) { Debug.Assert(false); }
 		}
 
 		// internal static Mutex TrySingleInstanceLock(string strName, bool bInitiallyOwned)

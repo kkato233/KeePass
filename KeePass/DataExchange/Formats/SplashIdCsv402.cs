@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,10 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Drawing;
-using System.IO;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 
 using KeePass.Resources;
 
@@ -33,7 +32,7 @@ using KeePassLib.Utility;
 
 namespace KeePass.DataExchange.Formats
 {
-	// 3.4-5.3+, types from web 2016-12 (version 8.1.1.925)
+	// 3.4-5.3+, 8.3.1 confirmed by user, types from web 2020-09 (version 8.3)
 	internal sealed class SplashIdCsv402 : FileFormatProvider
 	{
 		public override bool SupportsImport { get { return true; } }
@@ -44,11 +43,6 @@ namespace KeePass.DataExchange.Formats
 		public override string ApplicationGroup { get { return KPRes.PasswordManagers; } }
 		
 		public override bool ImportAppendsToRootGroupOnly { get { return false; } }
-
-		public override Image SmallIcon
-		{
-			get { return KeePass.Properties.Resources.B16x16_Imp_SplashID; }
-		}
 
 		private const string StrHeader = "SplashID Export File";
 
@@ -225,8 +219,7 @@ namespace KeePass.DataExchange.Formats
 
 			pe.IconId = pwIcon;
 
-			List<string> vTags = StrUtil.StringToTags(strType);
-			foreach(string strTag in vTags) { pe.AddTag(strTag); }
+			StrUtil.AddTags(pe.Tags, StrUtil.StringToTags(strType));
 
 			for(int iField = 0; iField < 9; ++iField)
 			{

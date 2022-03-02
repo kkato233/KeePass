@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -311,6 +311,8 @@ namespace KeePass.Util
 			// Restore previous working directory
 			WinUtil.SetWorkingDirectory(strPrevWorkDir);
 
+			if(peDataSource != null) peDataSource.Touch(false);
+
 			// SprEngine.Compile might have modified the database
 			MainForm mf = Program.MainForm;
 			if(mf != null)
@@ -492,10 +494,10 @@ namespace KeePass.Util
 
 				uint dwDummy;
 				if(NativeMethods.DeviceIoControl(hDevice, NativeMethods.FSCTL_LOCK_VOLUME,
-					IntPtr.Zero, 0, IntPtr.Zero, 0, out dwDummy, IntPtr.Zero) != false)
+					IntPtr.Zero, 0, IntPtr.Zero, 0, out dwDummy, IntPtr.Zero))
 				{
-					if(NativeMethods.DeviceIoControl(hDevice, NativeMethods.FSCTL_UNLOCK_VOLUME,
-						IntPtr.Zero, 0, IntPtr.Zero, 0, out dwDummy, IntPtr.Zero) == false)
+					if(!NativeMethods.DeviceIoControl(hDevice, NativeMethods.FSCTL_UNLOCK_VOLUME,
+						IntPtr.Zero, 0, IntPtr.Zero, 0, out dwDummy, IntPtr.Zero))
 					{
 						Debug.Assert(false);
 					}
@@ -851,6 +853,34 @@ namespace KeePass.Util
 
 			try { Directory.SetCurrentDirectory(str); }
 			catch(Exception) { Debug.Assert(false); }
+		}
+
+		internal static void ShowFileInFileManager(string strFilePath, bool bShowError)
+		{
+			if(string.IsNullOrEmpty(strFilePath)) { Debug.Assert(false); return; }
+
+			try
+			{
+				string strDir = UrlUtil.GetFileDirectory(strFilePath, false, true);
+				if(NativeLib.IsUnix())
+				{
+					NativeLib.StartProcess(strDir);
+					return;
+				}
+
+				string strExplorer = WinUtil.LocateSystemApp("Explorer.exe");
+
+				if(File.Exists(strFilePath))
+					NativeLib.StartProcess(strExplorer, "/select,\"" +
+						NativeLib.EncodeDataToArgs(strFilePath) + "\"");
+				else
+					NativeLib.StartProcess(strDir);
+			}
+			catch(Exception ex)
+			{
+				if(bShowError)
+					MessageService.ShowWarning(strFilePath, ex.Message);
+			}
 		}
 	}
 }

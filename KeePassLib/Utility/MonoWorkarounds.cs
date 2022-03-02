@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ namespace KeePassLib.Utility
 		//   Mono's clipboard functions don't work properly.
 		//   https://sourceforge.net/p/keepass/bugs/1530/
 		// 1574:
-		//   Finalizer of NotifyIcon throws on Mac OS X.
+		//   Finalizer of NotifyIcon throws on MacOS.
 		//   See also 1354.
 		//   https://sourceforge.net/p/keepass/bugs/1574/
 		// 1632:
@@ -143,6 +143,10 @@ namespace KeePassLib.Utility
 		//   PictureBox not rendered when bitmap height >= control height.
 		//   https://bugzilla.xamarin.com/show_bug.cgi?id=12525
 		//   https://sourceforge.net/p/keepass/discussion/329220/thread/54f61e9a/
+		// 19836:
+		//   URLs/documents cannot be opened using Process.Start anymore
+		//   (even when UseShellExecute = true).
+		//   https://github.com/mono/mono/issues/19836
 		// 100001:
 		//   Control locations/sizes are invalid/unexpected.
 		//   [NoRef]
@@ -151,6 +155,9 @@ namespace KeePassLib.Utility
 		//   [NoRef]
 		// 100003:
 		//   Icon.ExtractAssociatedIcon always returns the same icon.
+		//   [NoRef]
+		// 100004:
+		//   Use native Argon2 implementation.
 		//   [NoRef]
 		// 190417:
 		//   Mono's Process.Start method replaces '\\' by '/'.
@@ -221,6 +228,14 @@ namespace KeePassLib.Utility
 			return b;
 		}
 
+		// Public for plugins
+		public static void SetEnabled(uint uBugID, bool? obEnabled)
+		{
+			if(obEnabled.HasValue)
+				g_dForceReq[uBugID] = obEnabled.Value;
+			else g_dForceReq.Remove(uBugID);
+		}
+
 		internal static void SetEnabled(string strIDs, bool bEnabled)
 		{
 			if(string.IsNullOrEmpty(strIDs)) return;
@@ -232,7 +247,7 @@ namespace KeePassLib.Utility
 
 				uint uID;
 				if(StrUtil.TryParseUInt(strID.Trim(), out uID))
-					g_dForceReq[uID] = bEnabled;
+					SetEnabled(uID, bEnabled);
 			}
 		}
 

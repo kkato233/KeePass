@@ -1,6 +1,6 @@
 /*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ namespace KeePass.Native
 {
 	internal static partial class NativeMethods
 	{
-		[DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("Kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		internal static extern bool SetDllDirectory(string lpPathName);
 
@@ -67,23 +67,24 @@ namespace KeePass.Native
 		// [DllImport("User32.dll")]
 		// internal static extern uint GetMessagePos();
 
-		[DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("User32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		internal static extern int RegisterWindowMessage(string lpString);
 
 		// [DllImport("User32.dll")]
 		// internal static extern IntPtr GetDesktopWindow();
 
-		[DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("User32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		internal static extern IntPtr FindWindowEx(IntPtr hwndParent,
 			IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
 
 		[DllImport("User32.dll")]
 		internal static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
 
-		[DllImport("User32.dll")]
+		[DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false,
+			SetLastError = true)]
 		internal static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
-		// [DllImport("User32.dll", SetLastError = true)]
+		// [DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false, SetLastError = true)]
 		// internal static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
 		[DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false)]
@@ -92,7 +93,7 @@ namespace KeePass.Native
 		[DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false)]
 		private static extern IntPtr GetClassLongPtr(IntPtr hWnd, int nIndex);
 
-		// [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		// [DllImport("User32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 		// private static extern int GetClassName(IntPtr hWnd,
 		//	StringBuilder lpClassName, int nMaxCount);
 
@@ -104,16 +105,15 @@ namespace KeePass.Native
 		[return: MarshalAs(UnmanagedType.Bool)]
 		internal static extern bool IsZoomed(IntPtr hWnd);
 
-		[DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto,
-			ExactSpelling = false)]
+		[DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false,
+			SetLastError = true)]
 		private static extern int GetWindowTextLength(IntPtr hWnd);
 
-		// [DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto,
-		//	ExactSpelling = false)]
+		// [DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false, SetLastError = true)]
 		// private static extern int GetWindowText(IntPtr hWnd,
 		//	StringBuilder lpString, int nMaxCount);
-		[DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto,
-			ExactSpelling = false)]
+		[DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false,
+			SetLastError = true)]
 		private static extern int GetWindowText(IntPtr hWnd, IntPtr lpString,
 			int nMaxCount);
 
@@ -234,7 +234,8 @@ namespace KeePass.Native
 		// [DllImport("User32.dll", SetLastError = true)]
 		// internal static extern IntPtr GetClipboardData(uint uFormat);
 
-		[DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false,
+			SetLastError = true)]
 		internal static extern uint RegisterClipboardFormat(string lpszFormat);
 
 		// [DllImport("User32.dll")]
@@ -274,7 +275,8 @@ namespace KeePass.Native
 		internal static extern bool GetComboBoxInfo(IntPtr hWnd,
 			ref COMBOBOXINFO pcbi);
 
-		[DllImport("User32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false,
+			SetLastError = true)]
 		internal static extern IntPtr CreateDesktop(string lpszDesktop,
 			string lpszDevice, IntPtr pDevMode, UInt32 dwFlags,
 			[MarshalAs(UnmanagedType.U4)] DesktopFlags dwDesiredAccess,
@@ -298,9 +300,10 @@ namespace KeePass.Native
 			[MarshalAs(UnmanagedType.Bool)] bool fInherit,
 			[MarshalAs(UnmanagedType.U4)] DesktopFlags dwDesiredAccess);
 
-		[DllImport("User32.dll", SetLastError = true)]
+		[DllImport("User32.dll", CharSet = CharSet.Auto, ExactSpelling = false,
+			SetLastError = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
-		internal static extern bool GetUserObjectInformation(IntPtr hObj,
+		private static extern bool GetUserObjectInformation(IntPtr hObj,
 			int nIndex, IntPtr pvInfo, uint nLength, ref uint lpnLengthNeeded);
 
 		[DllImport("User32.dll", SetLastError = true)]
@@ -320,7 +323,8 @@ namespace KeePass.Native
 		// [DllImport("Imm32.dll")]
 		// internal static extern IntPtr ImmAssociateContext(IntPtr hWnd, IntPtr hIMC);
 
-		[DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("Kernel32.dll", CharSet = CharSet.Auto, ExactSpelling = false,
+			SetLastError = true)]
 		internal static extern IntPtr CreateFile(string lpFileName,
 			[MarshalAs(UnmanagedType.U4)] EFileAccess dwDesiredAccess,
 			[MarshalAs(UnmanagedType.U4)] EFileShare dwShareMode,
@@ -333,10 +337,12 @@ namespace KeePass.Native
 		[return: MarshalAs(UnmanagedType.Bool)]
 		internal static extern bool CloseHandle(IntPtr hObject);
 
-		[DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("Kernel32.dll", CharSet = CharSet.Auto, ExactSpelling = false,
+			SetLastError = true)]
 		internal static extern uint GetFileAttributes(string lpFileName);
 
-		[DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+		[DllImport("Kernel32.dll", CharSet = CharSet.Auto, ExactSpelling = false,
+			SetLastError = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		internal static extern bool DeleteFile(string lpFileName);
 
@@ -510,5 +516,11 @@ namespace KeePass.Native
 		[return: MarshalAs(UnmanagedType.Bool)]
 		internal static extern bool SetWindowDisplayAffinity(IntPtr hWnd,
 			uint dwAffinity);
+
+		[DllImport("User32.dll", EntryPoint = "SystemParametersInfo",
+			CharSet = CharSet.Auto, ExactSpelling = false, SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		internal static extern bool SystemParametersInfoI32(uint uiAction,
+			uint uiParam, ref int pvParam, uint fWinIni);
 	}
 }

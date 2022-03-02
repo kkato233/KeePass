@@ -1,6 +1,6 @@
 ﻿/*
   KeePass Password Safe - The Open-Source Password Manager
-  Copyright (C) 2003-2020 Dominik Reichl <dominik.reichl@t-online.de>
+  Copyright (C) 2003-2022 Dominik Reichl <dominik.reichl@t-online.de>
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ namespace KeePass.Forms
 		public EcasTriggerForm()
 		{
 			InitializeComponent();
-			Program.Translation.ApplyTo(this);
+			GlobalWindowManager.InitializeForm(this);
 		}
 
 		private void OnFormLoad(object sender, EventArgs e)
@@ -89,22 +89,25 @@ namespace KeePass.Forms
 			m_cbInitiallyOn.Checked = m_trigger.InitiallyOn;
 			m_cbTurnOffAfterAction.Checked = m_trigger.TurnOffAfterAction;
 
+			UIUtil.AccSetName(m_btnEventMoveUp, KPRes.MoveUp);
+			UIUtil.AccSetName(m_btnEventMoveDown, KPRes.MoveDown);
+			UIUtil.AccSetName(m_btnConditionMoveUp, KPRes.MoveUp);
+			UIUtil.AccSetName(m_btnConditionMoveDown, KPRes.MoveDown);
+			UIUtil.AccSetName(m_btnActionMoveUp, KPRes.MoveUp);
+			UIUtil.AccSetName(m_btnActionMoveDown, KPRes.MoveDown);
+
 			UpdateListsEx(false);
 			EnableControlsEx();
 			UIUtil.SetFocus(m_tbName, this);
 		}
 
-		private void CleanUpEx()
+		private void OnFormClosed(object sender, FormClosedEventArgs e)
 		{
 			// Detach event handlers
 			m_lvEvents.SmallImageList = null;
 			m_lvConditions.SmallImageList = null;
 			m_lvActions.SmallImageList = null;
-		}
 
-		private void OnFormClosed(object sender, FormClosedEventArgs e)
-		{
-			CleanUpEx();
 			GlobalWindowManager.RemoveWindow(this);
 		}
 

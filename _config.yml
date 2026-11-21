@@ -1,0 +1,20 @@
+theme: jekyll-theme-cayman
+title: KeePass Password Safe 日本語版
+description: Windows 向け KeePass 日本語版
+lang: ja
+url: http://github.ksysllc.co.jp
+baseurl: /KeePass
+show_downloads: false
+exclude:
+  - Build
+  - Ext
+  - KeePass
+  - KeePassLib
+  - KeePassLibN
+  - ShInstUtil
+  - Translation
+  - KeePass.sln
+  - KeePass_N35.sln
+  - KeePass_N48.sln
+  - "*.csproj"
+  - readme.md

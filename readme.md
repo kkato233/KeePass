@@ -46,8 +46,7 @@
 
 詳しくは [KeePass 公式ヘルプ：データベースの同期（英語）](https://keepass.info/help/v2/sync.html) を参照してください。
 
-## GitHub Pages の管理
+## サポート
 
-このサイトのトップページは `index.md` から `readme.md` を読み込み、テーマは `_config.yml` で設定しています。本文を更新するときは `readme.md` を編集してください。
+詳しいアプリの使い方、問い合わせは [みんなのWEBサービス](https://min-web-service.jp/) をご覧ください。
 
-GitHub Pages の公開元は `develop` ブランチのルートです。変更を `develop` に取り込むと公開されます。この作業ブランチ上の変更だけでは公開されません。
